@@ -1,0 +1,9 @@
+# depslib dependency file v1.0
+1760916213 source:c:\users\brian\onedrive\documentos\05 ingeniería informática\3640 algoritmos y estructuras de datos\c\hashmap_c-main\lista.c
+	"lista.h"
+
+1760915985 c:\users\brian\onedrive\documentos\05 ingeniería informática\3640 algoritmos y estructuras de datos\c\hashmap_c-main\lista.h
+	<stdio.h>
+	<stdlib.h>
+	<string.h>
+
