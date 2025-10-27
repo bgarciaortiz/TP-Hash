@@ -132,3 +132,53 @@ int sacar_dic(tDiccionario* dic, char* clave, void* valor, size_t tamValor)
         return FALSO;
     }
 }
+
+int recorrer_dic(tDiccionario* dic, void(*accion)(const void*, const void*), int (*cmp)(const void*, const void*))
+{
+    if(!dic || !dic->pl)
+        return FALSO;
+
+    for(int i=0; i<dic->capacidad; i++)
+    {
+        tNodo* actual=dic->pl[i];
+        if(actual)
+        {
+            while(actual)
+            {
+                tInfo* pinfo=(tInfo*)actual->info;
+                accion(pinfo->clave,pinfo->valor);
+                actual=actual->sig;
+            }
+        }
+    }
+    return VERDADERO;
+}
+
+int vaciar_lista(tLista* pl)
+{
+    if(!*pl)
+        return FALSO;
+    while(*pl)
+    {
+        tNodo* elim=(*pl);
+        tInfo* pinfo=(tInfo*)elim->info;
+
+        free(pinfo->clave);
+        free(pinfo->valor);
+        free(pinfo);
+
+        *pl=elim->sig;
+        free(elim);
+    }
+    return VERDADERO;
+}
+
+void destruir_dic(tDiccionario* dic)
+{
+    for(int i=0; i<dic->capacidad; i++)
+    {
+        vaciar_lista(&dic->pl[i]);
+    }
+    free(dic->pl);
+    free(dic);
+}
