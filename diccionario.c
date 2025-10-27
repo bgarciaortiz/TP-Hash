@@ -1,8 +1,9 @@
 #include "diccionario.h"
 
-//Funcion Hash -> Se toma del libro "El Lenguaje de Programación C"
-/* hash: forma un valor hash para la cadena s */
-unsigned tphash(char *s)
+//Funcion Hash -> Se toma del libro "El Lenguaje de ProgramaciÃ³n C"
+///* hash: forma un valor hash para la cadena s */
+
+unsigned mihash(char *s)
 {
     unsigned hashval;
     for (hashval = 0; *s != '\0'; s++)
@@ -10,107 +11,124 @@ unsigned tphash(char *s)
     return hashval % HASHSIZE;
 }
 
-int iniInfo(tInfo* info, char* clave, char* valor)
+int iniInfo(tInfo* info, char* clave, const void* valor, size_t tamValor)
 {
-    info=(tInfo*)malloc(sizeof(tInfo));
-    if(!info)
-        return FALSO;
-
-    info->tamclave = strlen(clave);
-    info->clave = (char*)malloc(info->tamclave);
+    info->tamClave = strlen(clave)+1;
+    info->clave = (char*)malloc(info->tamClave);
     if(!info->clave)
-        return FALSO;
-    memcpy(info->clave,clave,info->tamclave);
+        return FALSO;   // sin memoria
+    strcpy(info->clave,clave);
 
-    info->tamvalor = strlen(valor);
-    info->valor = (char*)malloc(info->tamvalor);
+    info->valor=malloc(tamValor);
     if(!info->valor)
+    {
+        free(info->clave);
+        return FALSO;   // sin memoria
+    }
+    info->tamValor=tamValor;
+    memcpy(info->valor,valor,info->tamValor);
+
+    return VERDADERO;
+}
+
+tDiccionario* crear_dic(size_t capacidad)   // tDiccionario*=tLista**=tNodo***
+{
+    tDiccionario* dic=(tDiccionario*)malloc(sizeof(tDiccionario));  // asigna memoria al diccionario
+    if(!dic)
+        return FALSO;   // sin memoria para diccionario
+
+    dic->pl=(tLista*)malloc(sizeof(tLista)*capacidad);  // asigna [HASHSIZE] listas
+    if(!dic->pl)
+    {
+        free(dic);
+        return FALSO;   // sin memoria para listas
+    }
+
+    dic->capacidad=capacidad;
+
+    for(int i=0; i<capacidad; i++)
+        crear_lista(&dic->pl[i]);
+
+    return dic;
+}
+
+int poner_dic(tDiccionario* pdic, char* clave, const void* valor, size_t tamValor)
+{
+    unsigned posicion=mihash(clave);
+    tLista* plista=&pdic->pl[posicion];
+    tNodo* actual=(*plista);
+
+    while(actual && (cmp(((tInfo*)actual->info)->clave,clave)))
+    {
+        actual=actual->sig;
+    }
+    if(actual && (!cmp(((tInfo*)actual->info)->clave,clave)))
+    {
+        tInfo* pInfo=(tInfo*)actual->info;
+        free(pInfo->valor);
+        pInfo->valor=malloc(tamValor);
+        if(!pInfo->valor)
+            return FALSO;
+        memcpy(pInfo->valor,valor,tamValor);
+        pInfo->tamValor=tamValor;
+    }
+    else
+    {
+        tInfo* info=(tInfo*)malloc(sizeof(tInfo));
+        if(!info)
+            return FALSO;
+        iniInfo(info,clave,valor,tamValor);
+        poner_ord_lista(plista,info,sizeof(tInfo*),cmp);
+    }
+    return VERDADERO;
+}
+
+int obtener_dic(tDiccionario* dic, char* clave, void* valor, size_t tamValor)
+{
+    unsigned posicion=mihash(clave);
+    tLista* plista=&dic->pl[posicion];
+    tNodo* actual=(*plista);
+
+    while(actual && (cmp(((tInfo*)actual->info)->clave,clave)))
+    {
+        actual=actual->sig;     // si no encuentra la clave sigue al siguente nodo de la lista
+    }
+    if(actual && (!cmp(((tInfo*)actual->info)->clave,clave)))
+    {
+        memcpy(valor,((tInfo*)actual->info)->valor,MINIMO(((tInfo*)actual->info)->tamValor,tamValor));
+    }
+    else
+    {
+        return FALSO;   // clave no encontrada
+    }
+    return VERDADERO;
+}
+
+int sacar_dic(tDiccionario* dic, char* clave, void* valor, size_t tamValor)
+{
+    unsigned posicion=mihash(clave);
+    tLista* plista=&dic->pl[posicion];
+    tNodo* actual=(*plista);
+
+    while(actual && (cmp(((tInfo*)actual->info)->clave,clave)))
+    {
+        actual=actual->sig;
+    }
+    if(actual && (!cmp(((tInfo*)actual->info)->clave,clave)))
+    {
+        tInfo* info_ext;
+        if(!sacar_elem_ord_lista(plista,&info_ext,sizeof(tInfo*),cmp))
+        {
+            return FALSO;
+        }
+        memcpy(valor,info_ext->valor,MINIMO(info_ext->tamValor,tamValor));
+        free(info_ext->valor);
+        free(info_ext->clave);
+        free(info_ext);
+        return VERDADERO;
+    }
+    else
+    {
         return FALSO;
-    memcpy(info->valor,valor,info->tamvalor);
-
-    return 0;
-}
-
-void crear_dic(tDiccionario* dic, int tam)
-{
-    //Recorro cada elemento e inicializo la lista para cada uno
-    int pos=0;
-    while(  dic+(sizeof(tDiccionario)*pos) < dic +(sizeof(tDiccionario)*tam)   )
-    {
-        crear_lista((dic+(sizeof(tDiccionario) * pos))->pl);
-        pos++;
-    }
-}
-
-int poner_dic(tDiccionario *dic, char *clave, char *valor)
-{
-    //Obtengo posicion
-    int pos=tphash(clave);
-
-    //Guardo la info en una estructura
-    tInfo *info;
-
-    iniInfo(info, clave, valor);
-
-    //Inserto la estructura con los datos en la lista
-    ///Falta que reemplaze el valor en caso de que la clave ya exista
-
-    poner_ord_lista((dic+(sizeof(tDiccionario)*pos))->pl, info, sizeof(tInfo),cmp);
-
-    //El calculo para saber la posicion en el vector puede ser una macro. "sizeof(tInfo)" tambien
-
-    return 0;
-}
-
-int obtener_dic(tDiccionario* dic, char* clave, char* valor)
-{
-    int pos=tphash(clave);
-
-    tInfo *info;
-    iniInfo(info, clave, valor);
-
-    //Funcion que retorna la info del nodo en el parametro que le paso
-    vernodo((dic+(sizeof(tDiccionario)*pos))->pl, info, sizeof(tInfo));
-            /// cuál es el parámetro??
-
-    //Copio el valor en el parametro recibido para el retorno
-    strcpy(valor, info->valor);
-            /// acaso no se copia el valor en 'iniInfo'?
-
-    return 0;
-}
-
-void sacar_dic(tDiccionario* dic, char* clave)
-{
-    int pos=tphash(clave);
-
-    //Funcion que busca en la lista la clave y elimina el nodo
-    eliminarNodo((dic+(sizeof(tDiccionario)*pos))->pl, clave);
-}
-
-int recorrer_dic(tDiccionario*, accion, int (*cmp)(const void*, const void*))
-{
-    //Recorro cada elemento
-    int pos=0;
-    while((dic+(sizeof(tDiccionario) * pos)) < dic +((sizeof(tDiccionario) * tam)))
-    {
-        tDiccionario->pl->info
-        ///Aca va una funcion que recorra la lista y ejecute para cada elemento la accion que recibo como paramtro
-        pos++;
-    }
-    return 0;
-}
-
-void destruir_dic(tDiccionario* dic, size_t tam)
-{
-    //Recorro cada elemento e inicializo la lista para cada uno
-    int pos=0;
-    while((dic+(sizeof(tDiccionario) * pos)) < dic +((sizeof(tDiccionario) * tam)))
-    {
-
-        ///Elimino la lista -> implica eliminar datos y liberar memoria
-        eliminarLista((dic+(sizeof(tDiccionario) * pos))->pl);
-
-        pos++;
     }
 }
