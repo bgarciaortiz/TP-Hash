@@ -1,9 +1,4 @@
-#include "lista.h"
 #include "diccionario.h"
-
-    // recorrer
-
-    // destruir hasmap
 
 int main()
 {
@@ -13,4 +8,3 @@ int main()
 
     return 0;
 }
-
