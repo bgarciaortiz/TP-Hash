@@ -30,8 +30,8 @@ tDiccionario* crear_dic(size_t tam);
 int poner_dic(tDiccionario* pdic, char* clave, const void* valor, size_t tamValor);
 int obtener_dic(tDiccionario* dic, char* clave, void* valor, size_t tamValor);
 int sacar_dic(tDiccionario* dic, char* clave, void* valor, size_t tamValor);
-
-int recorrer_dic(tDiccionario*, void (*accion)(const void*, const void*), int (*cmp)(const void*,const void*));
-void destruir_dic(tDiccionario* dic, size_t tam);
+int recorrer_dic(tDiccionario*, void (*accion)(const void*, const void*), int (*cmp)(const void*, const void*));
+int vaciar_lista(tLista* pl);
+void destruir_dic(tDiccionario* dic);
 
 #endif // DICCIONARIO_H_INCLUDED
